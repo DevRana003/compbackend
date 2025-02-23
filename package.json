@@ -2,6 +2,7 @@
   "name": "compbackend",
   "version": "1.0.0",
   "description": "testing new functionalities",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -10,5 +11,8 @@
     "javascript"
   ],
   "author": "Dev",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
 }
