@@ -162,11 +162,75 @@ const refreshAccessToken = asyncHandler(async(req,res)=>{
 
 })
 
+const changeUserPassword = asyncHandler(async(req,res)=>{
+    const {oldPassword , newPassword} = req.body
 
+    const user = User.findById(req.user?._id)
+    const isPasswordcorrect = await user.isPasswordcorrect(oldPassword)
+    if(!isPasswordcorrect) throw new ApiError(400,"password is not correct")
+
+    user.password = newPassword;
+    await user.save({validateBeforeSave:false});
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200,{},"password changed successfully")) 
+
+})
+
+const getCurrentUser = asyncHandler(async (req,res)=>{
+    return res
+    .status(200)
+    .json(200,req.user,"current user fetched")
+})
+
+const updateAccountDetails = asyncHandler(async(req,res)=>{
+    const {fullName , email } = req.body
+    if(!fullName||!email)
+    {
+        throw new ApiError(400,"full name or email")
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set:{
+                fullName , 
+                email
+            }
+        },
+        {new:true}
+        ).select("-password -refreshToken")
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, user , "Account details updated successfully "))
+    
+
+})
+
+const changeUseravatar = asyncHandler(async(req,res)=>{
+
+    const avatarlocal = req.user?.avatar
+
+    const newAvatar = req.file.avatar
+
+    if(!newAvatar) throw new ApiError(400, "no new avatar found");
+
+    const avatar = await uploadoncloudinary(newAvatar)
+
+    if(!avatar) throw new ApiError(400,"no response from cloudinary while uploading new avatar")
+
+    const user = User.findByIdAndUpdate(req.user?._id,{$set:{avatar:avatar.url}},{new:true}).select("-password -refreshToken")
+})
 
 export { 
     registerUser,
     loginUser,
     logoutUser,
-    refreshAccessToken 
-}       
+    refreshAccessToken,
+    changeUserPassword,
+    getCurrentUser,
+    updateAccountDetails,
+    changeUseravatar
+}           
