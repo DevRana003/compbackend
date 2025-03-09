@@ -243,6 +243,69 @@ const changeUserCover = asyncHandler(async(req,res)=>{
     return res.status(200).json(new ApiResponse(200,{user},"successfull changed CoverImage"))
 })
 
+const getUserChannelProfile = asyncHandler(async(req,res)=>{
+    const { username } = req.params
+
+    if(username?.trim()) throw new ApiError(400 , "username is not there in getuserchannelprofile")
+
+    const channel = await User.aggregate([
+        {
+            $match:{
+                username:username.toLowerCase()
+            }   
+        },
+        {
+            $Lookup: {
+                from : "subscriptions",
+                localField : "_id",
+                foreignField : "channel",
+                as : "subscribers"  
+            }
+        },
+        {
+            $Lookup:{
+                from :"subscriptions",
+                localField : "_id",
+                foreignField : "subscriber",
+                as : "subscribedTo"
+            }
+        },
+        {
+            $addFields : {
+                subscriberscount :{
+                    $size: "$subscribers"
+                },
+                channelsubscribed : {
+                    $size:"$subscribedTo"
+                },
+                issubscribed:{
+                    $cond: {
+                        if:{$in:[req.user?._id,"$subscribers.subscriber"]}
+                    }
+                }
+            }
+        },
+        {
+            $project:{
+                username :1,
+                subscriberscount:1,
+                channelsubscribed:1,
+                issubscribed:1,
+                avatar:1,
+                coverImage:1,
+                email:1,
+                fullName:1
+            }
+        }
+    ])
+
+    if(!channel?.length) throw new ApiError(400 , "no channel found mean no user found of this ")
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200,channel[0],"succefully calculated subscriber and subscribedTo"))
+})
+
 export { 
     registerUser,
     loginUser,
