@@ -222,6 +222,25 @@ const changeUseravatar = asyncHandler(async(req,res)=>{
     if(!avatar) throw new ApiError(400,"no response from cloudinary while uploading new avatar")
 
     const user = User.findByIdAndUpdate(req.user?._id,{$set:{avatar:avatar.url}},{new:true}).select("-password -refreshToken")
+
+    return res.status(200).json(new ApiResponse(200,{user},"successfull changed avatar"))
+})
+
+const changeUserCover = asyncHandler(async(req,res)=>{
+
+    const coverlocal = req.user?.avatar
+
+    const newCover = req.file.avatar
+
+    if(!newCover) throw new ApiError(400, "no new cover found");
+
+    const coverImage = await uploadoncloudinary(newCover)
+
+    if(!coverImage) throw new ApiError(400,"no response from cloudinary while uploading new coverImage")
+
+    const user = User.findByIdAndUpdate(req.user?._id,{$set:{coverImage:coverImage.url}},{new:true}).select("-password -refreshToken")
+
+    return res.status(200).json(new ApiResponse(200,{user},"successfull changed CoverImage"))
 })
 
 export { 
@@ -232,5 +251,6 @@ export {
     changeUserPassword,
     getCurrentUser,
     updateAccountDetails,
-    changeUseravatar
+    changeUseravatar,
+    changeUserCover
 }           
