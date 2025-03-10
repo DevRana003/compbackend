@@ -93,7 +93,7 @@ const loginUser = asyncHandler(async(req,res)=>{
 
     const {refreshToken , accessToken} = await genrateTokens(user._id);
 
-    const loggedinuser = await User.findOne(user._id).select("-password -refreshToken");
+    const loggedinuser = await User.findOne(user._id).select("-password");
 
     const options = {
         httpOnly:true,
@@ -112,7 +112,7 @@ const  logoutUser = asyncHandler(async(req,res)=>{
     await User.findByIdAndUpdate(
         req.user._id,
         {
-            $set:{refreshToken:undefined}
+            $unset:{refreshToken:1}
         },
         {
             new: true
@@ -138,7 +138,7 @@ const refreshAccessToken = asyncHandler(async(req,res)=>{
     
         if(!incomingtoken) throw new ApiError(400,"Incoming token not found");
     
-        const decodedtoken = jwt.verify(incomingtoken,REFRESH_TOKEN_SECRET)
+        const decodedtoken = jwt.verify(incomingtoken,process.env.REFRESH_TOKEN_SECRET)
     
         const user = await User.findById(decodedtoken._id);
     
@@ -146,17 +146,18 @@ const refreshAccessToken = asyncHandler(async(req,res)=>{
     
         if(incomingtoken!==user.refreshToken) throw new ApiError(400, " token do not match ")
     
-        const{accessToken, newrefreshToken} = await genrateTokens(user._id)
-    
+        const{refreshToken,accessToken } = await genrateTokens(user._id)
+        console.log(refreshToken)
+        console.log(accessToken)
         const options = {
             httpOnly:true,
             Secure: true
         }
     
         return res.status(200)
-        .cookie("accesstoke",accessToken,options)
-        .cookie("refreshToken", newrefreshToken, options)
-        .json(new ApiResponse(200,{accessToken , refreshToken:newrefreshToken},"access token refreshed successfully"))
+        .cookie("accesstoken",accessToken,options)
+        .cookie("refreshToken", refreshToken, options)
+        .json(new ApiResponse(200,{accessToken ,refreshToken},"access token refreshed successfully"))
     } catch (error) {
         throw new ApiError(400,"error in the updating token of try catch ")
     }
